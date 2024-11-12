@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # This is the file where should insert your own code.
 #
-# Author: Your Name <your@email.com>
+# Author: Taha Erkoc <nx324@stud.uni-heidelberg.de>
+# Author: Quang Minh Ngo <@stud.uni-heidelberg.de>
 
 
 # For exercise 1.1
+
 def evaluate_energy(nodes, edges, assignment):
     unary_costs = 0.0
     pairwise_costs = 0.0
@@ -20,11 +22,6 @@ def evaluate_energy(nodes, edges, assignment):
 
 
 # For exercise 1.2
-# def bruteforce(nodes, edges):
-#     assignment = [0] * len(nodes)
-#     # TODO: implement brute-force algorithm here...
-#     energy = evaluate_energy(nodes, edges, assignment)
-#     return (assignment, energy)
 
 def generate_assignments(nodes, current_assignment, index, all_assignments):
     if index == len(nodes):
@@ -37,7 +34,6 @@ def generate_assignments(nodes, current_assignment, index, all_assignments):
         current_assignment[index] = label
         generate_assignments(nodes, current_assignment, index + 1, all_assignments)
 
-# For exercise 1.2
 def bruteforce(nodes, edges):
     # List to store all possible assignments
     all_assignments = []
@@ -62,31 +58,13 @@ def bruteforce(nodes, edges):
     # Return the best assignment and its corresponding energy
     return (assignment, energy)
 
-# For exercise 1.3
-# def dynamic_programming(nodes, edges):
-#     F, ptr = None, None
-#     return F, ptr
 
-# def backtrack(nodes, edges, F, ptr):
-#     assignment = [0] * len(nodes)
-#     return assignment
+
 
 # For exercise 1.3
-import numpy as np
 
-def dynamic_programming(nodes, edges, lambda_penalty):
-    """
-    Forward pass of the dynamic programming algorithm to compute the Bellman functions.
-    
-    Parameters:
-        nodes (list of lists): Each sublist represents the node potential values for a node in the chain.
-        edges (list of tuples): Each tuple represents an edge (u, v) where `u` and `v` are adjacent nodes in the chain.
-        lambda_penalty (float): Penalty applied when adjacent nodes have different labels.
-        
-    Returns:
-        F (list of dicts): Bellman functions where F[i][x] gives the minimum cost for node `i` with label `x`.
-        ptr (list of dicts): Pointer table where ptr[i][x] points to the optimal label for node `i+1` given label `x` at node `i`.
-    """
+def dynamic_programming(nodes, edges):
+    # Initialize Bellman functions and pointers
     num_nodes = len(nodes)
     F = [{} for _ in range(num_nodes)]
     ptr = [{} for _ in range(num_nodes - 1)]
@@ -100,8 +78,9 @@ def dynamic_programming(nodes, edges, lambda_penalty):
         for x in range(len(nodes[i].costs)):
             min_cost = float('inf')
             best_label = None
-            for y in range(len(nodes[i + 1])):
-                cost = nodes[i][x] + edges.costs[x, y] + F[i + 1][y]
+            for y in range(len(nodes[i + 1].costs)):
+                # Calculate cost for the edge and next node
+                cost = nodes[i].costs[x] + edges[i].costs[x, y] + F[i + 1][y]
                 if cost < min_cost:
                     min_cost = cost
                     best_label = y
@@ -110,20 +89,8 @@ def dynamic_programming(nodes, edges, lambda_penalty):
 
     return F, ptr
 
-
 def backtrack(nodes, edges, F, ptr):
-    """
-    Backtracking pass to recover the optimal label assignment from Bellman functions and pointers.
-    
-    Parameters:
-        nodes (list of lists): Each sublist represents the node potential values for a node in the chain.
-        edges (list of tuples): Each tuple represents an edge (u, v) where `u` and `v` are adjacent nodes in the chain.
-        F (list of dicts): Bellman functions computed in the forward pass.
-        ptr (list of dicts): Pointer table for tracking optimal labels.
-        
-    Returns:
-        assignment (list): Optimal label assignment for each node.
-    """
+    # Initialize assignment list
     num_nodes = len(nodes)
     assignment = [0] * num_nodes
     
@@ -135,3 +102,4 @@ def backtrack(nodes, edges, F, ptr):
         assignment[i] = ptr[i - 1][assignment[i - 1]]
     
     return assignment
+

@@ -58,7 +58,22 @@ def run_example():
        nodes, edges = make_graph(l)
        print('lambda={:.1f}  =>  bruteforce returns {}'.format(
            l, student.bruteforce(nodes, edges)))
-
+       
+    
+    # Exercise 1.3: Chain structure
+    print('# Exercise 1.3')
+    for l in (0, 0.2, 0.5):
+        nodes, edges = make_graph(l)
+        
+        # Remove the edge (v1, v3) to create a chain structure (v1 - v2 - v3)
+        edges = [edge for edge in edges if not (edge.left == 0 and edge.right == 2)]
+        
+        F, ptr = student.dynamic_programming(nodes, edges)
+        optimal_assignment = student.backtrack(nodes, edges, F, ptr)
+        optimal_energy = student.evaluate_energy(nodes, edges, optimal_assignment)
+        
+        print('lambda={:.1f}  =>  Optimal assignment: {} with energy: {}'.format(
+            l, optimal_assignment, optimal_energy))
 
 if __name__ == '__main__':
     run_example()
