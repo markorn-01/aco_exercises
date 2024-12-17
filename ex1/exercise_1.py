@@ -2,7 +2,7 @@
 # This is the file where should insert your own code.
 #
 # Author: Taha Erkoc <nx324@stud.uni-heidelberg.de>
-# Author: Quang Minh Ngo <@stud.uni-heidelberg.de>
+# Author: Quang Minh Ngo <ve330@stud.uni-heidelberg.de>
 
 
 # For exercise 1.1

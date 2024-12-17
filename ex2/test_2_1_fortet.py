@@ -69,7 +69,6 @@ edges = [Edge(left=0, right=1, costs={(0, 0): 17.655011334644666, (0, 1): 75.631
 
 
 ground_truth = ((0, 3, 2, 1, 1, 0, 4, 4, 1, 2), -1871.7980589709996)
-from pulp import *
 
 def run_test():
     res = student.convert_to_ilp_fortet(nodes, edges)
@@ -78,10 +77,6 @@ def run_test():
     except TypeError:
         ilp, temp = res, ()
     res = ilp.solve()
-    print(student.ilp_to_labeling(nodes, edges, ilp, *temp))
-    status = LpStatus[ilp.status]
-    print(ilp.objective.value())
-    print(status)
     assert res
     assert abs(ilp.objective.value() - ground_truth[1]) < 1e-4
     assert tuple(student.ilp_to_labeling(nodes, edges, ilp, *temp)) == ground_truth[0]
