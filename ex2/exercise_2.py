@@ -43,7 +43,7 @@ def convert_to_ilp(nodes, edges):
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
             # Auxiliary variable for product of binary variables x[(i, k)] and x[(j, l)]
-            y[(i, j, k, l)] = pulp.LpVariable(f'y_{i}_{j}_{k}_{l}', cat="Binary")
+            y[(i, j, k, l)] = pulp.LpVariable(f'y_{i}_{j}_{k}_{l}', lowBound=0, upBound=1, cat="Continuous")
             objective.append(cost * y[(i, j, k, l)])
 
             # Sherali-Adams constraints:
