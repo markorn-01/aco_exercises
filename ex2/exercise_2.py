@@ -81,7 +81,7 @@ def convert_to_ilp_fortet(nodes, edges):
             x[(i, k)] = pulp.LpVariable(f'x_{i}_{k}', cat="Binary")
 
     # Auxiliary variables for edge interactions
-    aux = {}
+    y = {}
 
     # Objective function: Add node costs and edge costs
     objective = []
@@ -95,13 +95,13 @@ def convert_to_ilp_fortet(nodes, edges):
     for edge in edges:
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
-            aux[(i, j, k, l)] = pulp.LpVariable(f'aux_{i}_{j}_{k}_{l}', cat="Binary")
-            objective.append(cost * aux[(i, j, k, l)])
+            y[(i, j, k, l)] = pulp.LpVariable(f'y_{i}_{j}_{k}_{l}', cat="Binary")
+            objective.append(cost * y[(i, j, k, l)])
 
             # Fortet's linearization constraints
-            ilp += aux[(i, j, k, l)] <= x[(i, k)]
-            ilp += aux[(i, j, k, l)] <= x[(j, l)]
-            ilp += aux[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
+            ilp += y[(i, j, k, l)] <= x[(i, k)]
+            ilp += y[(i, j, k, l)] <= x[(j, l)]
+            ilp += y[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
 
     # Set the objective function
     ilp += pulp.lpSum(objective)
