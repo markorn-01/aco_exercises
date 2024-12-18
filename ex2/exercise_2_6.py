@@ -11,7 +11,7 @@ def load_masks(directory='ex2/segments/'):
         if filename.endswith('.png'):
             path = os.path.join(directory, filename)
             with Image.open(path) as img:
-                masks[filename] = np.array(img) > 128  # Assuming binary masks
+                masks[filename] = np.array(img).astype(bool)
     return masks
 
 def create_ilp_model(masks):
