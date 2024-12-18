@@ -34,9 +34,23 @@ def make_graph():
 
 def run_example():
     nodes, edges = make_graph()
-    lp = student.convert_to_lp(nodes, edges)
+    lp, x = student.convert_to_lp_fortet(nodes, edges)
     res = lp.solve()
     assert res
+
+    # Print the LP solution
+    print("LP Relaxation Results:")
+    for i, node in enumerate(nodes):
+        print(f"Node {i}: {[x[i, k].value() for k in range(len(node.costs))]}")
+
+    # Set up and solve the ILP
+    ilp = student.convert_to_ilp(nodes, edges)
+    ilp.solve()
+
+    # Print the ILP solution
+    print("\nILP Solution Results:")
+    ilp_labeling = student.ilp_to_labeling(nodes, edges, ilp)
+    print(f"Node Labelings: {ilp_labeling}")
 
     for var in lp.variables():
         print('{} -> {}'.format(var.name, var.value()))

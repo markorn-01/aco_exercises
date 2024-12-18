@@ -43,7 +43,7 @@ def convert_to_ilp(nodes, edges):
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
             # Auxiliary variable for product of binary variables x[(i, k)] and x[(j, l)]
-            y[(i, j, k, l)] = pulp.LpVariable(f'y_{i}_{j}_{k}_{l}', lowBound=0, upBound=1, cat="Continuous")
+            y[(i, j, k, l)] = pulp.LpVariable(f'y_{i}_{j}_{k}_{l}', cat="Binary")
             objective.append(cost * y[(i, j, k, l)])
 
             # Sherali-Adams constraints:
@@ -138,10 +138,43 @@ def ilp_to_labeling(nodes, edges, ilp):
 
 ##### Exercise 2.2 #####
 # Relaxed Sherali-Adams linearization
-# def convert_to_lp(nodes, edges):
-#     lp = pulp.LpProblem('GM')
-#     # populate LP
-#     return lp
+def convert_to_lp(nodes, edges):
+ 
+    lp = pulp.LpProblem("Sherali_Adams_Relaxation", pulp.LpMinimize)
+
+    x = {}
+    for i, node in enumerate(nodes):
+        for k in range(len(node.costs)):
+            x[(i, k)] = pulp.LpVariable(f"x_{i}_{k}", lowBound=0, upBound=1, cat="Continuous")
+
+    y = {}
+
+    objective = []
+    for i, node in enumerate(nodes):
+        for k, cost in enumerate(node.costs):
+            objective.append(cost * x[(i, k)])
+
+    for edge in edges:
+        i, j = edge.left, edge.right
+        for (k, l), cost in edge.costs.items():
+            y[(i, j, k, l)] = pulp.LpVariable(f"y_{i}_{j}_{k}_{l}", lowBound=0, upBound=1, cat="Continuous")
+            objective.append(cost * y[(i, j, k, l)])
+
+            lp += y[(i, j, k, l)] <= x[(i, k)]
+            lp += y[(i, j, k, l)] <= x[(j, l)]
+            lp += y[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
+
+    for i, node in enumerate(nodes):
+        lp += pulp.lpSum(x[(i, k)] for k in range(len(node.costs))) == 1
+
+    lp += pulp.lpSum(objective)
+
+    # Debug prints
+    print("Objective function:", lp.objective)
+    for constraint in lp.constraints.values():
+        print("Constraint:", constraint)
+
+    return lp, x
 
 # Relaxed Fortet linearization
 def convert_to_lp_fortet(nodes, edges):
