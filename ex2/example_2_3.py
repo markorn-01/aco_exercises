@@ -34,7 +34,7 @@ def make_graph():
 
 def run_example():
     nodes, edges = make_graph()
-    lp, x = student.convert_to_lp_fortet(nodes, edges)
+    lp, x = student.convert_to_lp(nodes, edges)
     res = lp.solve()
     assert res
 
