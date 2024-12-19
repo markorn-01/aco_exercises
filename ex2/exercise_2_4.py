@@ -1,3 +1,6 @@
+# Author: Quang Minh Ngo <ve330@stud.uni-heidelberg.de>
+# Author: Taha Erkoc <nx324@stud.uni-heidelberg.de>
+
 from model_2_4 import *
 import exercise_2 as student
 
@@ -48,3 +51,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+'''
+Acyclic Graphs:
+The ILP strictly enforces integrality constraints and achieves the globally optimal solution,
+something that LP relaxations cannot fully guarantee. Both LP approaches (Fortet and Sherali-Adams)
+perform similarly (because the functions themselves are practically the same ;D ), producing results
+that align reasonably well with the ILP solutions.
+
+Cyclic Graphs:
+LP relaxations struggle with cyclic dependencies due to their relaxed nature, often leading to 
+oversimplified or incorrect results. Both LP methods struggle with handling cyclic dependencies,
+which results in solutions that are significantly different from the ILP optimum.
+'''

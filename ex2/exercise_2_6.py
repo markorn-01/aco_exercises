@@ -1,3 +1,6 @@
+# Author: Quang Minh Ngo <ve330@stud.uni-heidelberg.de>
+# Author: Taha Erkoc <nx324@stud.uni-heidelberg.de>
+
 import pulp
 import numpy as np
 from PIL import Image

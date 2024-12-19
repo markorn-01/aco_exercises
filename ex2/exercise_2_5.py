@@ -1,6 +1,10 @@
-from model_2_5 import *  # Import all stereo models
-import exercise_2 as student  # Use LP/ILP formulations from exercise_2
+# Author: Quang Minh Ngo <ve330@stud.uni-heidelberg.de>
+# Author: Taha Erkoc <nx324@stud.uni-heidelberg.de>
+
+from model_2_5 import *
+import exercise_2 as student
 import time
+import pulp
 
 
 def solve_and_analyze(nodes, edges, method_name, solver_type):
@@ -31,7 +35,7 @@ def solve_and_analyze(nodes, edges, method_name, solver_type):
 
     # Solve the problem
     solve_start = time.time()
-    problem.solve()
+    problem.solve(pulp.PULP_CBC_CMD(msg=True, timeLimit=300))  # Timeout set to 300 seconds
     solve_time = time.time() - solve_start
 
     # Return results
@@ -75,3 +79,16 @@ if __name__ == "__main__":
         print(f"{result['downsampling']:<15}{result['method']:<15}{result['solver']:<5}"
               f"{result['variables']:<10}{result['constraints']:<15}"
               f"{result['setup_time']:<15.4f}{result['solve_time']:<15.4f}{result['objective_value']:<10.4f}")
+
+'''
+The resulting LP/ILP formulations are quite large, with the number of variables and constraints.
+In fact, they are so large, that we run into a memory error, even with the
+reduced downsampling and setting a timeout. So at least for our implementation,
+we are not able to solve all instances in reasoaonble time neither with ILP nor LP
+(including both Sherali-Adams as well as Fortet linearization).
+
+Generally, we think that using general LP/ILP solvers for large-scale vision problems
+can be challenging due to the size and computational demands of the problems.
+For practical applications, specialized algorithms or approximate methods tailored to the problem
+domain should be the way to tackle such problems.
+'''

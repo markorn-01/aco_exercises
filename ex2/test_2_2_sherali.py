@@ -60,10 +60,6 @@ def run_test():
     except TypeError:
         lp, temp = res, ()
     res = lp.solve()
-    print(f"Calculated Objective Value: {lp.objective.value()}")
-    print(f"Expected Ground Truth Objective: {ground_truth[1]}")
-    print("Calculated Labeling:", student.lp_to_labeling(nodes, edges, lp, *temp))
-    print("Expected Ground Truth Labeling:", ground_truth[0])
     assert res
     assert abs(lp.objective.value() - ground_truth[1]) < 1e-4
     assert tuple(student.lp_to_labeling(nodes, edges, lp, *temp)) == ground_truth[0]

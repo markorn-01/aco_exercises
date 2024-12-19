@@ -16,7 +16,7 @@ def convert_to_ilp(nodes, edges):
         edges (list): List of Edge objects, each with "left", "right", and "costs" attributes (state cost dictionary).
 
     Returns:
-        lp (pulp.LpProblem): Formulated ILP problem.
+        ilp (pulp.LpProblem): Formulated ILP problem.
     """
     # Create the ILP problem
     ilp = pulp.LpProblem("GM", pulp.LpMinimize)
@@ -33,12 +33,12 @@ def convert_to_ilp(nodes, edges):
     # Objective function: Combine node costs and edge costs
     objective = []
 
-    # Node costs
+    # Add node costs to objective
     for i, node in enumerate(nodes):
         for k, cost in enumerate(node.costs):
             objective.append(cost * x[(i, k)])
 
-    # Edge costs and Sherali-Adams constraints
+    # Add edge costs and Sherali-Adams constraints
     for edge in edges:
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
@@ -51,7 +51,7 @@ def convert_to_ilp(nodes, edges):
             ilp += y[(i, j, k, l)] <= x[(j, l)]
             ilp += y[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
 
-    # Node constraints: Each node must be assigned exactly one state
+    # Each node must be assigned exactly one state
     for i, node in enumerate(nodes):
         ilp += pulp.lpSum(x[(i, k)] for k in range(len(node.costs))) == 1
 
@@ -60,22 +60,24 @@ def convert_to_ilp(nodes, edges):
 
     return ilp
 
+
 # Fortet linearization
 def convert_to_ilp_fortet(nodes, edges):
     """
     Create an ILP using Fortet's linearization for node and edge costs.
+
     Args:
         nodes (list): List of Node objects, each with a "costs" attribute (list of state costs).
         edges (list): List of Edge objects, each with "left", "right", and "costs" attributes (state cost dictionary).
 
     Returns:
-        lp (pulp.LpProblem): Formulated ILP problem.
+        ilp (pulp.LpProblem): Formulated ILP problem.
     """
     # Create the ILP problem
     ilp = pulp.LpProblem("GM", pulp.LpMinimize)
 
     # Binary variables for each node's state
-    x = {}
+    x = {}  # x[i, k] is the binary variable for node i in state k
     for i, node in enumerate(nodes):
         for k in range(len(node.costs)):
             x[(i, k)] = pulp.LpVariable(f'x_{i}_{k}', cat="Binary")
@@ -83,32 +85,33 @@ def convert_to_ilp_fortet(nodes, edges):
     # Auxiliary variables for edge interactions
     y = {}
 
-    # Objective function: Add node costs and edge costs
+    # Objective function: Combine node costs and edge costs
     objective = []
 
-    # Node costs
+    # Add node costs to objective
     for i, node in enumerate(nodes):
         for k, cost in enumerate(node.costs):
             objective.append(cost * x[(i, k)])
 
-    # Edge costs and Fortet's constraints
+    # Add edge costs and Fortet constraints
     for edge in edges:
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
+            # Auxiliary variable for product of binary variables x[(i, k)] and x[(j, l)]
             y[(i, j, k, l)] = pulp.LpVariable(f'y_{i}_{j}_{k}_{l}', cat="Binary")
             objective.append(cost * y[(i, j, k, l)])
 
-            # Fortet's linearization constraints
+            # Fortet constraints
             ilp += y[(i, j, k, l)] <= x[(i, k)]
             ilp += y[(i, j, k, l)] <= x[(j, l)]
             ilp += y[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
 
-    # Set the objective function
-    ilp += pulp.lpSum(objective)
-
-    # Node constraints: Each node must be assigned exactly one state
+    # Each node must be assigned exactly one state
     for i, node in enumerate(nodes):
         ilp += pulp.lpSum(x[(i, k)] for k in range(len(node.costs))) == 1
+
+    # Set the objective function
+    ilp += pulp.lpSum(objective)
 
     return ilp
 
@@ -139,40 +142,55 @@ def ilp_to_labeling(nodes, edges, ilp):
 ##### Exercise 2.2 #####
 # Relaxed Sherali-Adams linearization
 def convert_to_lp(nodes, edges):
- 
+    """
+    Create the LP relaxation using Sherali-Adams linearization.
+    Args:
+        nodes (list): List of Node objects, each with a "costs" attribute.
+        edges (list): List of Edge objects, each with "left", "right", and "costs".
+
+    Returns:
+        lp (pulp.LpProblem): LP relaxation problem.
+        x (dict): Relaxed decision variables for node states.
+    """
+    # Create the LP problem
     lp = pulp.LpProblem("Sherali_Adams_Relaxation", pulp.LpMinimize)
 
+    # Continuous decision variables for node states
     x = {}
     for i, node in enumerate(nodes):
         for k in range(len(node.costs)):
             x[(i, k)] = pulp.LpVariable(f"x_{i}_{k}", lowBound=0, upBound=1, cat="Continuous")
 
+    # Auxiliary variables for edge interactions
     y = {}
 
+    # Objective function: Combine node costs and edge costs
     objective = []
+
+    # Add node costs to the objective
     for i, node in enumerate(nodes):
         for k, cost in enumerate(node.costs):
             objective.append(cost * x[(i, k)])
 
+    # Add edge costs and Sherali-Adams constraints
     for edge in edges:
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
+            # Auxiliary variable for the product x[(i, k)] * x[(j, l)]
             y[(i, j, k, l)] = pulp.LpVariable(f"y_{i}_{j}_{k}_{l}", lowBound=0, upBound=1, cat="Continuous")
             objective.append(cost * y[(i, j, k, l)])
 
+            # Sherali-Adams constraints
             lp += y[(i, j, k, l)] <= x[(i, k)]
             lp += y[(i, j, k, l)] <= x[(j, l)]
             lp += y[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
 
+    # Each node must be assigned exactly one state
     for i, node in enumerate(nodes):
         lp += pulp.lpSum(x[(i, k)] for k in range(len(node.costs))) == 1
 
+    # Set the objective function
     lp += pulp.lpSum(objective)
-
-    # # Debug prints
-    # print("Objective function:", lp.objective)
-    # for constraint in lp.constraints.values():
-    #     print("Constraint:", constraint)
 
     return lp, x
 
@@ -200,13 +218,15 @@ def convert_to_lp_fortet(nodes, edges):
     # Auxiliary variables for edge interactions
     y = {}
 
-    # Objective function: Node costs
+    # Objective function: Combine node costs and edge costs
     objective = []
+
+    # Add node costs to the objective
     for i, node in enumerate(nodes):
         for k, cost in enumerate(node.costs):
             objective.append(cost * x[(i, k)])
 
-    # Edge costs and Fortet constraints
+    # Add edge costs and Fortet constraints
     for edge in edges:
         i, j = edge.left, edge.right
         for (k, l), cost in edge.costs.items():
@@ -214,12 +234,12 @@ def convert_to_lp_fortet(nodes, edges):
             y[(i, j, k, l)] = pulp.LpVariable(f"y_{i}_{j}_{k}_{l}", lowBound=0, upBound=1, cat="Continuous")
             objective.append(cost * y[(i, j, k, l)])
 
-            # Fortet's linearization constrain
+            # Fortet constraints
             lp += y[(i, j, k, l)] <= x[(i, k)]
             lp += y[(i, j, k, l)] <= x[(j, l)]
             lp += y[(i, j, k, l)] >= x[(i, k)] + x[(j, l)] - 1
 
-    # Node constraints: Each node must sum to exactly 1
+    # Each node must be assigned exactly one state
     for i, node in enumerate(nodes):
         lp += pulp.lpSum(x[(i, k)] for k in range(len(node.costs))) == 1
 
@@ -251,3 +271,17 @@ def lp_to_labeling(nodes, edges, lp, x):
         best_state = max(range(len(node.costs)), key=lambda k: state_values[k])
         labeling.append(best_state)
     return labeling
+
+
+'''
+The LP Optima is a relaxed solution. It is not guaranteed to be integer and provides a
+lower bound for the ILP optimum in a minimazation problem.
+
+The rounded solution uses an heuristic approach to convert the fractional solution to 
+an integer solution. While it is a lot faster and simpler than solving the ILP, it is 
+not neccessarily optimal and introduces a small error.
+
+The ILP solution is the exact optimal integer solution that satisfies all constraints.
+It guarantees the best possible solution for the objective function but is computationally
+expensive to solve, especially for larger-scale problems.
+'''

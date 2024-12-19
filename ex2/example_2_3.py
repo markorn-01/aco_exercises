@@ -58,3 +58,14 @@ def run_example():
 
 if __name__ == '__main__':
     run_example()
+
+'''
+Since the costs for each state of a node are identical, the LP relaxation has no preference
+and assigns a fractional value of 0.5 to each state. As a result, all auxiliary variables y 
+are set to 0 due to the Sherali-Adams constraints.
+Because the LP solution is indifferent to node states and edge costs are 0, naive rounding
+assigns all nodes to the first (0th) state without considering penalties.
+
+In contrast, the ILP enforces binary assignments for the x variables and directly incorporates
+edge penalties, leading to the optimal solution.
+'''
