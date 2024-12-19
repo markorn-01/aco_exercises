@@ -169,10 +169,10 @@ def convert_to_lp(nodes, edges):
 
     lp += pulp.lpSum(objective)
 
-    # Debug prints
-    print("Objective function:", lp.objective)
-    for constraint in lp.constraints.values():
-        print("Constraint:", constraint)
+    # # Debug prints
+    # print("Objective function:", lp.objective)
+    # for constraint in lp.constraints.values():
+    #     print("Constraint:", constraint)
 
     return lp, x
 
