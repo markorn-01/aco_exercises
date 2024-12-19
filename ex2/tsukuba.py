@@ -82,7 +82,7 @@ ALL_MODEL_DOWNSAMPLINGS = [1, 2, 4, 8, 16, 32]
 
 def load_downsampled_model(downsampling):
     assert downsampling in ALL_MODEL_DOWNSAMPLINGS
-    filename = 'ex2/models/tsu_{:02d}.uai.gz'.format(downsampling)
+    filename = 'models/tsu_{:02d}.uai.gz'.format(downsampling)
     return load_uai(filename)
 
 
