@@ -230,7 +230,7 @@ def convert_to_lp_fortet(nodes, edges):
 
 
 # Extract labeling from LP solution
-def lp_to_labeling(nodes, edges, lp, x, threshold=0.5):
+def lp_to_labeling(nodes, edges, lp, x):
     """
     Extract the labeling from the LP solution using improved rounding.
     Args:
@@ -247,7 +247,7 @@ def lp_to_labeling(nodes, edges, lp, x, threshold=0.5):
     for i, node in enumerate(nodes):
         state_values = [pulp.value(x[(i, k)]) for k in range(len(node.costs))]
 
-        # Rounding: choose state with highest value, above threshold
+        # Rounding: choose state with highest value
         best_state = max(range(len(node.costs)), key=lambda k: state_values[k])
         labeling.append(best_state)
     return labeling

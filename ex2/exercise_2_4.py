@@ -10,9 +10,9 @@ def solve_models(models, use_ilp=False, method="fortet"):
         else:
             # Choose the method of linearization based on the 'method' parameter
             if method == "fortet":
-                problem, _ = student.convert_to_lp_fortet(nodes, edges)
+                problem, x = student.convert_to_lp_fortet(nodes, edges)
             elif method == "sherali-adams":
-                problem, _ = student.convert_to_lp(nodes, edges)
+                problem, x = student.convert_to_lp(nodes, edges)
         
         problem.solve()
 
@@ -20,7 +20,7 @@ def solve_models(models, use_ilp=False, method="fortet"):
         if use_ilp:
             labeling = student.ilp_to_labeling(nodes, edges, problem)
         else:
-            labeling = student.lp_to_labeling(nodes, edges, problem, _)
+            labeling = student.lp_to_labeling(nodes, edges, problem, x)
 
         results.append(labeling)
     
