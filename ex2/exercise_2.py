@@ -58,6 +58,16 @@ def convert_to_ilp(nodes, edges):
     # Set the objective function
     ilp += pulp.lpSum(objective)
 
+    # marginalization constraints
+    for e in edges:
+        for s in range(len(nodes[e.left].costs)):
+            ilp += pulp.lpSum(y[(e.left,e.right,s,t)] 
+                            for t in range(len(nodes[e.right].costs))) == x[(e.left,s)]
+        
+        for t in range(len(nodes[e.right].costs)):
+            ilp += pulp.lpSum(y[(e.left,e.right,s,t)] 
+                            for s in range(len(nodes[e.left].costs))) == x[(e.right,t)]
+            
     return ilp
 
 
@@ -192,6 +202,16 @@ def convert_to_lp(nodes, edges):
     # Set the objective function
     lp += pulp.lpSum(objective)
 
+    # marginalization constraints
+    for e in edges:
+        for s in range(len(nodes[e.left].costs)):
+            lp += pulp.lpSum(y[(e.left,e.right,s,t)] 
+                            for t in range(len(nodes[e.right].costs))) == x[(e.left,s)]
+        
+        for t in range(len(nodes[e.right].costs)):
+            lp += pulp.lpSum(y[(e.left,e.right,s,t)] 
+                            for s in range(len(nodes[e.left].costs))) == x[(e.right,t)]
+
     return lp, x
 
 # Relaxed Fortet linearization
@@ -275,7 +295,8 @@ def lp_to_labeling(nodes, edges, lp, x):
 
 '''
 The LP Optima is a relaxed solution. It is not guaranteed to be integer and provides a
-lower bound for the ILP optimum in a minimazation problem.
+lower bound for the ILP optimum in a minimazation problem with Sherali-Adams giving
+tighter bounds than Fortet. The LP solution is much faster to solve than the ILP
 
 The rounded solution uses an heuristic approach to convert the fractional solution to 
 an integer solution. While it is a lot faster and simpler than solving the ILP, it is 

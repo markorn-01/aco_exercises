@@ -7,7 +7,7 @@ from PIL import Image
 import os
 import matplotlib.pyplot as plt
 
-def load_masks(directory='ex2/segments/'):
+def load_masks(directory='segments/'):
     """Load masks and convert them to binary arrays."""
     masks = {}
     for filename in os.listdir(directory):
