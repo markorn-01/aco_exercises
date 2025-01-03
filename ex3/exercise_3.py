@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # This is the file where should insert your own code.
 #
-# Author: Your Name <your@email.com>
+# Author: Quang Minh Ngo <ve330@stud.uni-heidelberg.de>
+# Author: Taha Erkoc <nx324@stud.uni-heidelberg.de>
 #
 # IMPORTANT: You should use the following function definitions without applying
 # any changes to the interface, because the function will be used for automated
@@ -11,6 +12,7 @@
 #
 # Iterated Conditional Modes (ICM)
 #
+import numpy as np
 
 def icm_update_step(nodes, edges, grid, assignment, u):
     # `assignment` is the current labeling (list that assigns a label to
@@ -18,7 +20,17 @@ def icm_update_step(nodes, edges, grid, assignment, u):
     # `u` is the index of the current node for which an update should be performed.
     # Task: Update the assignemnt for node `u`.
     # Return: Nothing.
-    pass
+    neighbors = grid.neighbors(u)
+    num_labels = grid.width * grid.height
+    costs = [0] * num_labels
+    for label in range(num_labels):
+        cost = 0
+        for neighbor in neighbors:
+            if assignment[neighbor] == label:
+                cost += edges[grid.edge_index(u, neighbor)]
+        costs.append(cost)
+    
+    assignment[u] = costs.index(min(costs))
 
 
 def icm_single_iteration(nodes, edges, grid, assignment):
@@ -26,14 +38,23 @@ def icm_single_iteration(nodes, edges, grid, assignment):
     # each node).
     # Task: Perform a full iteration of all ICM update steps.
     # Return: Nothing.
-    pass
+    for u in nodes:
+        icm_update_step(nodes, edges, grid, assignment, u)
 
 
 def icm_method(nodes, edges, grid):
     # Task: Run ICM algorithm until convergence.
     # Return: Assignment after converging.
-    pass
-
+    num_nodes = len(nodes)
+    num_labels = grid.width * grid.height
+    assignment = [np.random.randint(num_labels) for _ in range(num_nodes)]
+    max_iterations = 100
+    for _ in range(max_iterations):
+        old_assignment = assignment.copy()
+        icm_single_iteration(nodes, edges, grid, assignment)
+        if assignment == old_assignment:
+            break
+    return assignment
 
 #
 # Block ICM
@@ -47,18 +68,33 @@ def block_icm_update_step(nodes, edges, grid, assignment, subproblem):
     # `subproblem` is the current chain-structured subproblem.
     # Task: Update the assignemnt for the current suproblem.
     # Return: Nothing.
-    pass
+    for edge in subproblem:
+        u, v = edge.left, edge.right
+        icm_update_step(nodes, edges, grid, assignment, u)
+        icm_update_step(nodes, edges, grid, assignment, v)
 
 
 def block_icm_single_iteration(nodes, edges, grid, assignment):
     # Similar to ICM but you should iterate over all subproblems in the row
     # column decomposition.
-    pass
+    decomposition = grid.row_column_decomposition()
+    
+    for subproblem in decomposition:
+        block_icm_update_step(nodes, edges, grid, assignment, subproblem)
 
 
 def block_icm_method(nodes, edges, grid):
     # Task: Run the block ICM method until convergence.
-    pass
+    num_nodes = len(nodes)
+    num_labels = grid.width * grid.height
+    assignment = [np.random.randint(num_labels) for _ in range(num_nodes)]
+    max_iterations = 100
+    for _ in range(max_iterations):
+        old_assignment = assignment.copy()
+        block_icm_single_iteration(nodes, edges, grid, assignment)
+        if assignment == old_assignment:
+            break
+    return assignment
 
 
 #
