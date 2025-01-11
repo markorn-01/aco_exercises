@@ -13,23 +13,28 @@
 # Iterated Conditional Modes (ICM)
 #
 import numpy as np
-
+from grid import *
 def icm_update_step(nodes, edges, grid, assignment, u):
     # `assignment` is the current labeling (list that assigns a label to
     # each node).
     # `u` is the index of the current node for which an update should be performed.
     # Task: Update the assignemnt for node `u`.
     # Return: Nothing.
-    neighbors = grid.neighbors(u)
-    num_labels = grid.width * grid.height
-    costs = [0] * num_labels
-    for label in range(num_labels):
-        cost = 0
+    neighbors = grid.neighbors(u)  # Get neighbors of node `u`
+    num_labels = len(nodes[u].costs)  # Total number of labels
+    costs = [0] * num_labels  # Initialize cost for each label
+
+    for u_label in range(num_labels):  # Iterate over all possible labels for `u`
+        cost = nodes[u].costs[u_label]  # Start with the unary cost for the label
         for neighbor in neighbors:
-            if assignment[neighbor] == label:
-                cost += edges[grid.edge_index(u, neighbor)]
-        costs.append(cost)
-    
+            v_label = assignment[neighbor]  # Current label of the neighbor
+            # Retrieve the edge between `u` and `neighbor`
+            edge = grid.edge(u, neighbor) if u < neighbor else grid.edge(neighbor, u)
+            # Add the pairwise cost for the label combination (u_label, v_label)
+            cost += edge.costs.get((u_label, v_label), 0)
+        costs[u_label] = cost
+
+    # Assign the label with the minimum total cost
     assignment[u] = costs.index(min(costs))
 
 
@@ -38,7 +43,7 @@ def icm_single_iteration(nodes, edges, grid, assignment):
     # each node).
     # Task: Perform a full iteration of all ICM update steps.
     # Return: Nothing.
-    for u in nodes:
+    for u in range(len(nodes)):  # Iterate over node indices
         icm_update_step(nodes, edges, grid, assignment, u)
 
 
@@ -77,8 +82,7 @@ def block_icm_update_step(nodes, edges, grid, assignment, subproblem):
 def block_icm_single_iteration(nodes, edges, grid, assignment):
     # Similar to ICM but you should iterate over all subproblems in the row
     # column decomposition.
-    decomposition = grid.row_column_decomposition()
-    
+    decomposition = row_column_decomposition(grid)
     for subproblem in decomposition:
         block_icm_update_step(nodes, edges, grid, assignment, subproblem)
 
