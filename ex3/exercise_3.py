@@ -112,7 +112,18 @@ def subgradient_compute_single_subgradient(nodes, edges, grid, edge_idx):
     # Return: A tuple where the first term is a list of the n left
     # subgradient values and the second term is a list of the m right
     # subgradient values.
-    pass
+    # Retrieve the edge
+    edge = edges[edge_idx]
+    u, v = edge.left, edge.right
+
+    left_subgradient = [0] * len(nodes[u].costs)
+    right_subgradient = [0] * len(nodes[v].costs)
+
+    for (label_u, label_v), cost in edge.costs.items():
+        left_subgradient[label_u] += cost
+        right_subgradient[label_v] += cost
+
+    return left_subgradient, right_subgradient
 
 
 def subgradient_compute_full_subgradient(nodes, edges, grid):
@@ -120,32 +131,65 @@ def subgradient_compute_full_subgradient(nodes, edges, grid):
     # Return dictionary with (u, v) => list of subgradient values.
     # Note: subgradient[u, v] is not identical to subgradient[v, u] (see book
     # where \phi_{u,v} is also not identical to \phi_{v,u}).
-    pass
+    subgradient = {}
+    
+    for edge_idx, edge in enumerate(edges):
+        u, v = edge.left, edge.right
+        
+        # Compute subgradient for the edge
+        sub_u, sub_v = subgradient_compute_single_subgradient(nodes, edges, grid, edge_idx)
+        
+        # Store subgradient values
+        subgradient[(u, v)] = (sub_u, sub_v)
+    
+    return subgradient
 
 
 def subgradient_apply_update(nodes, edges, grid, subgradient, stepsize):
     # Task: Reparametrize the model by modifying the costs (in direction of
     # `subgradient` multiplied by `stepsize`).
-    pass
-
+    for (u, v), (left_subgradient, right_subgradient) in subgradient.items():
+        for label_u in range(len(nodes[u].costs)):
+            nodes[u].costs[label_u] -= stepsize * left_subgradient[label_u]
+        for label_v in range(len(nodes[v].costs)):
+            nodes[v].costs[label_v] -= stepsize * right_subgradient[label_v]
 
 def subgradient_update_step(nodes, edges, grid, stepsize):
     # Task: Compute subgradient for the problem and reparametrize the the
     # whole problem.
-    pass
+    # Compute the full subgradient
+    subgradient = subgradient_compute_full_subgradient(nodes, edges, grid)
+    
+    # Apply the subgradient update
+    subgradient_apply_update(nodes, edges, grid, subgradient, stepsize)
 
 
 def subgradient_round_primal(nodes, edges, grid):
     # Task: Implement primal rounding as discussed in the lecture.
     # Return: Assignment (list that assigns each node one label).
-    pass
+
+    assignment = []
+    for node in nodes:
+        assignment.append(np.argmin(node.costs))
+    return assignment
 
 
 def subgradient_method(nodes, edges, grid, iterations=100):
     # Task: Run subgradient method for given number of iterations.
     # Step size should be computed by yourself.
     # Return: Assignment.
-    pass
+    # Initialize step size
+    stepsize = 1.0 / iterations
+    
+    for _ in range(iterations):
+        # Perform a subgradient update step
+        subgradient_update_step(nodes, edges, grid, stepsize)
+        
+        # Decrease the step size
+        stepsize *= 0.95  # Decay factor
+    
+    # Round the primal solution
+    return subgradient_round_primal(nodes, edges, grid)
 
 
 #
