@@ -84,14 +84,83 @@ def block_icm_update_step(nodes, edges, grid, assignment, subproblem):
     # `subproblem` is the current chain-structured subproblem.
     # Task: Update the assignemnt for the current suproblem.
     # Return: Nothing.
-    # Iterate through edges in the subproblem
-    # Collect all unique nodes in the subproblem
-    unique_nodes = {node for edge in subproblem for node in (edge.left, edge.right)}
+    # # Iterate through edges in the subproblem
+    # # Collect all unique nodes in the subproblem
+    # unique_nodes = {node for edge in subproblem for node in (edge.left, edge.right)}
 
-    # Update nodes in a consistent order (e.g., sorted by node index)
-    for u in sorted(unique_nodes):
-        icm_update_step(nodes, edges, grid, assignment, u)
+    # # Update nodes in a consistent order (e.g., sorted by node index)
+    # for u in sorted(unique_nodes):
+    #     icm_update_step(nodes, edges, grid, assignment, u)
+    # sequence of nodes from the subproblem edges
+    chain_nodes = []
+    edge = subproblem[0]  
+    chain_nodes.extend([edge.left, edge.right])
+    
+    # add remaining nodes from subsequent edges
+    for edge in subproblem[1:]:
+        chain_nodes.append(edge.right)
+        
+    n = len(chain_nodes)  
+    L = len(nodes[chain_nodes[0]].costs)  
+    
+    dp = [[float('inf')] * L for _ in range(n)]
+    backtrack = [[0] * L for _ in range(n)]
+    
+    # initialize first node
+    u = chain_nodes[0]
+    for s in range(L):
+        dp[0][s] = nodes[u].costs[s]
+        
+        # costs from neighbors outside chain
+        for v in grid.neighbors(u):
+            if v not in chain_nodes:
+                if v < u:
+                    edge = grid.edge(v, u)
+                    dp[0][s] += edge.costs[(assignment[v], s)]
+                else:
+                    edge = grid.edge(u, v) 
+                    dp[0][s] += edge.costs[(s, assignment[v])]
 
+    for i in range(1, n):
+        u = chain_nodes[i]  
+        v = chain_nodes[i-1]  
+        
+        # get connecting edge
+        edge = grid.edge(v, u) if v < u else grid.edge(u, v)
+        
+        for s in range(L): 
+            # initialize with unary cost
+            base_cost = nodes[u].costs[s]
+            
+            # add costs from neighbors outside chain
+            for w in grid.neighbors(u):
+                if w not in chain_nodes:
+                    if w < u:
+                        e = grid.edge(w, u)
+                        base_cost += e.costs[(assignment[w], s)]
+                    else:
+                        e = grid.edge(u, w)
+                        base_cost += e.costs[(s, assignment[w])]
+            
+            # best previous label
+            for t in range(L):  #
+                # add pairwise cost based on edge direction
+                pair_cost = edge.costs[(t, s)] if v < u else edge.costs[(s, t)]
+                total_cost = dp[i-1][t] + base_cost + pair_cost
+                
+                if total_cost < dp[i][s]:
+                    dp[i][s] = total_cost
+                    backtrack[i][s] = t
+    
+
+    # optimal label for last node
+    curr_label = min(range(L), key=lambda s: dp[n-1][s])
+    assignment[chain_nodes[n-1]] = curr_label
+    
+    # trace back
+    for i in range(n-2, -1, -1):
+        curr_label = backtrack[i+1][curr_label]
+        assignment[chain_nodes[i]] = curr_label
 
 def block_icm_single_iteration(nodes, edges, grid, assignment):
     # Similar to ICM but you should iterate over all subproblems in the row
@@ -128,51 +197,58 @@ def subgradient_compute_single_subgradient(nodes, edges, grid, edge_idx):
     # Return: A tuple where the first term is a list of the n left
     # subgradient values and the second term is a list of the m right
     # subgradient values.
-        # Get the edge and its endpoints
     edge = edges[edge_idx]
     u, v = edge.left, edge.right
-
-    # Number of labels for nodes u and v
-    num_labels_u = len(nodes[u].costs)
-    num_labels_v = len(nodes[v].costs)
-
-    # Initialize subgradient vectors for nodes u and v
-    left_subgradient = [0] * num_labels_u
-    right_subgradient = [0] * num_labels_v
-
-    # Find minimizers for unary and pairwise terms
-    min_label_u = min(range(num_labels_u), key=lambda s: nodes[u].costs[s])
-    min_pairwise_label = min(
-        ((s, t) for s in range(num_labels_u) for t in range(num_labels_v)),
-        key=lambda pair: edge.costs.get(pair, 0)
-    )
-
-    s_u, s_pair_u = min_label_u, min_pairwise_label[0]
-
-    # Compute subgradient for node u
-    for s in range(num_labels_u):
-        if s == s_u and s == s_pair_u:
-            left_subgradient[s] = 0  # Gradient cancels
-        elif s == s_u:
-            left_subgradient[s] = -1
-        elif s == s_pair_u:
-            left_subgradient[s] = 1
-        else:
-            left_subgradient[s] = 0
-
-    # Similarly, compute subgradient for node v
-    s_v, s_pair_v = min_label_u, min_pairwise_label[1]
-    for t in range(num_labels_v):
-        if t == s_v and t == s_pair_v:
-            right_subgradient[t] = 0
-        elif t == s_v:
-            right_subgradient[t] = -1
-        elif t == s_pair_v:
-            right_subgradient[t] = 1
-        else:
-            right_subgradient[t] = 0
-
-    return left_subgradient, right_subgradient
+    
+    # find locally optimal labels
+    # for node u
+    min_u = float('inf')
+    best_u = 0
+    for s in range(len(nodes[u].costs)):
+        cost = nodes[u].costs[s]
+        if cost < min_u:
+            min_u = cost
+            best_u = s
+            
+    # for node v
+    min_v = float('inf')
+    best_v = 0
+    for t in range(len(nodes[v].costs)):
+        cost = nodes[v].costs[t]
+        if cost < min_v:
+            min_v = cost
+            best_v = t
+            
+    # for edge uv
+    min_uv = float('inf')
+    best_s = best_t = 0
+    for s in range(len(nodes[u].costs)):
+        for t in range(len(nodes[v].costs)):
+            cost = edge.costs[(s, t)]
+            if cost < min_uv:
+                min_uv = cost
+                best_s = s
+                best_t = t
+                
+    # compute subgradient according to equation (6.31)
+    left_grad = [0] * len(nodes[u].costs)  
+    right_grad = [0] * len(nodes[v].costs)
+    
+    # for each label of left node
+    for s in range(len(nodes[u].costs)):
+        if s == best_u and s != best_s:
+            left_grad[s] = -1
+        elif s != best_u and s == best_s:
+            left_grad[s] = 1
+            
+    # for each label of right node  
+    for t in range(len(nodes[v].costs)):
+        if t == best_v and t != best_t:
+            right_grad[t] = -1
+        elif t != best_v and t == best_t:
+            right_grad[t] = 1
+            
+    return (left_grad, right_grad)
 
 
 def subgradient_compute_full_subgradient(nodes, edges, grid):
@@ -191,14 +267,24 @@ def subgradient_compute_full_subgradient(nodes, edges, grid):
 def subgradient_apply_update(nodes, edges, grid, subgradient, stepsize):
     # Task: Reparametrize the model by modifying the costs (in direction of
     # `subgradient` multiplied by `stepsize`).
-    for (u, v), (left_grad, right_grad) in subgradient.items():
-        # Update the unary costs for node u
+    for edge in edges:
+        u, v = edge.left, edge.right
+        
+        # get subgradients for both directions
+        phi_uv = subgradient[(u,v)]  # φu,v
+        phi_vu = subgradient[(v,u)]  # φv,u
+        
+        # update node costs
         for s in range(len(nodes[u].costs)):
-            nodes[u].costs[s] -= stepsize * left_grad[s]
-
-        # Update the unary costs for node v
+            nodes[u].costs[s] -= stepsize * phi_uv[s]
+            
         for t in range(len(nodes[v].costs)):
-            nodes[v].costs[t] -= stepsize * right_grad[t]
+            nodes[v].costs[t] -= stepsize * phi_vu[t]
+        
+        # update edge costs
+        for s in range(len(nodes[u].costs)):
+            for t in range(len(nodes[v].costs)):
+                edge.costs[(s,t)] += stepsize * (phi_uv[s] + phi_vu[t])
 
 def subgradient_update_step(nodes, edges, grid, stepsize):
     # Task: Compute subgradient for the problem and reparametrize the the
@@ -281,16 +367,22 @@ def min_sum_diffusion_update_step(nodes, edges, grid, u):
     # rounding, distribution).
     # Return the assignment/label for node `u`.
     min_sum_diffusion_accumulation(nodes, edges, grid, u)
+    
+    label = min_sum_diffusion_round_primal(nodes, edges, grid, u)
+    
     min_sum_diffusion_distribution(nodes, edges, grid, u)
-
+    
+    return label
 
 def min_sum_diffusion_single_iteration(nodes, edges, grid):
     # Implement a single iteration for the Min-Sum diffusion method.
     # Iterate over all nodes and perform the update step on them.
     # Return the assignment/labeling for the full model.
+    assignment = []
     for u in range(len(nodes)):
-        min_sum_diffusion_update_step(nodes, edges, grid, u)
-
+        label = min_sum_diffusion_update_step(nodes, edges, grid, u)
+        assignment.append(label)
+    return assignment
 
 def min_sum_diffusion_method(nodes, edges, grid):
     # Implement the Min-Sum diffusion method (run multiple iterations).
